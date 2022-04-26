@@ -29,7 +29,7 @@ usage: java -jar freemarker-gen.jar
 You can use either the xml-input or the json-input, never both.
 The xml dom is made available through `payloadElement`  this is the objectrepresentation for the xml data structure.
 
-## Debugging
+## Debugging for freemarker templates
 When an error occurs in the template all known variables are dumped in the output file.
 This way the user has an insight what the variables contained at the time of the error.
 
