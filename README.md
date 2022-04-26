@@ -1,12 +1,12 @@
-# FreemarkerGen tool
+# Transforminator tool
 
-This tool is to test Freemarker templates that can be used in message tranformations in the opentunnel.
+This tool is to test Freemarker and Xslt templates that can be used in message tranformations in the opentunnel.
 
 Minimal java version 1.8
 
 ## Usage
 
-` java -jar ~/tools/FreemarkerGen_jre18.jar -a vars.txt -t template.ftl -x input.xml -o output.xml -g groovy/lib/`
+` java -jar Transforminator.jar -a vars.txt -t template.ftl -x input.xml -o output.xml`
 
 ### Options
 
@@ -90,10 +90,10 @@ so in your template use the tunnelfunction like this;
 
 ``${tunnelFunction("helloworld",myname)}``
 
-⚠️When the tunnelfunction is used from the freemarker template the groovy script is then executed. The groovy engine in FreemarkerGen has only access to any some specific OpenTunnel classes
+⚠️When the tunnelfunction is used from the freemarker template the groovy script is then executed. The groovy engine in Transforminator has only access to any some specific OpenTunnel classes
 so in the case you do use specific OT classes most of them do not work here.
 
-When you might need java jar libraries you may place them in a directory and use the -g option to define the path to that directory. The FreemarkerGen scans and load all jar files in that directory.
+When you might need java jar libraries you may place them in a directory and use the -g option to define the path to that directory. The Transforminator scans and load all jar files in that directory.
 
 Look below for an example groovy script.
 
@@ -288,7 +288,7 @@ data:        ${allAttachments[key].data}
 ```groovy
 class Greeter {
     String sayHello(name) {
-        def greet = "Hello, Freemarkergen " + name
+        def greet = "Hello, Transforminator " + name
         greet
     }
 }
@@ -300,9 +300,9 @@ gr.sayHello(args[1])
 
 ### Example tasks for visual studio code
 
-To use the freemarkergen tool from vscode and test your templates you need to add a folder named .vscode
+To use the Transforminator tool from vscode and test your templates you need to add a folder named .vscode
 In the .vscode folder create a file named tasks.json and add the following content.
-Now when you have all files in place press ctrl-shift-B and freemarkergen will run with the options supplied in the tasks.json
+Now when you have all files in place press ctrl-shift-B and Transforminator will run with the options supplied in the tasks.json
 ```json
 {
   "version": "2.0.0",
@@ -310,10 +310,10 @@ Now when you have all files in place press ctrl-shift-B and freemarkergen will r
     {
       "label": "current file",
       "type": "shell",
-      "command": "java -jar ~/tools/Freemarkergen.jar -t ${fileBasename} -x verstrekVordering_voorbeeld.xml -a vars.properties -o ${fileBasenameNoExtension}.xml",
+      "command": "java -jar ~/tools/Transforminator.jar -t ${fileBasename} -x verstrekVordering_voorbeeld.xml -a vars.properties -o ${fileBasenameNoExtension}.xml",
       "problemMatcher": [
         {
-          "owner": "freemarkergen",
+          "owner": "Transforminator",
           "fileLocation": [
             "relative",
             "${workspaceFolder}"
