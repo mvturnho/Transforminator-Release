@@ -1,12 +1,12 @@
-# Transforminator tool
+# FreemarkerGen tool
 
-This tool is to test Freemarker and Xslt templates that can be used in message tranformations in the opentunnel.
+This tool is to test Freemarker templates that can be used in message tranformations in the opentunnel.
 
 Minimal java version 1.8
 
 ## Usage
 
-` java -jar Transforminator.jar -a vars.txt -t template.ftl -x input.xml -o output.xml`
+` java -jar ~/tools/FreemarkerGen_jre18.jar -a vars.txt -t template.ftl -x input.xml -o output.xml -g groovy/lib/`
 
 ### Options
 
@@ -18,6 +18,7 @@ usage: java -jar freemarker-gen.jar
  -t,--template <arg>         freemarker template file
  -x,--xml-input <arg>        xml input filepath
  -j,--json-input <arg>       json input filepath
+ -i,--text-input <arg>       text input filepath
  -o,--output <arg>           output file
  -f,--function-dir <arg>     Function dir
  -g,--groovy-lib-dir <arg>   groovy lib path
@@ -26,10 +27,10 @@ usage: java -jar freemarker-gen.jar
  -v,--validate               validate resulting xml file
 ```
 
-You can use either the xml-input or the json-input, never both.
+You can use either the xml-input json-input or text-input, never together.
 The xml dom is made available through `payloadElement`  this is the objectrepresentation for the xml data structure.
 
-## Debugging for freemarker templates
+## Debugging
 When an error occurs in the template all known variables are dumped in the output file.
 This way the user has an insight what the variables contained at the time of the error.
 
@@ -90,10 +91,10 @@ so in your template use the tunnelfunction like this;
 
 ``${tunnelFunction("helloworld",myname)}``
 
-⚠️When the tunnelfunction is used from the freemarker template the groovy script is then executed. The groovy engine in Transforminator has only access to any some specific OpenTunnel classes
+⚠️When the tunnelfunction is used from the freemarker template the groovy script is then executed. The groovy engine in FreemarkerGen has only access to any some specific OpenTunnel classes
 so in the case you do use specific OT classes most of them do not work here.
 
-When you might need java jar libraries you may place them in a directory and use the -g option to define the path to that directory. The Transforminator scans and load all jar files in that directory.
+When you might need java jar libraries you may place them in a directory and use the -g option to define the path to that directory. The FreemarkerGen scans and load all jar files in that directory.
 
 Look below for an example groovy script.
 
@@ -167,8 +168,20 @@ Multipart formdata that is not a file attachment is parsed as a ``url_`` tunnelv
 
 ``url_name=value``
 
+### exitpoint
+
+``exitpoint://EXP_OUT=GET:application/json:http://localhost:8441/mock/service``
+
+This entry needs the METHOD:content-type:URL
+
+From your template you can use the Opentunnel `deliveryPointAttachment` function to send a message to the exitpoint using its code/name
+
+```ftl
+<#assign val = deliveryPointAttachment(payload,"EXP_OUT")>
+```
+
 ### expressions (Not OpenTunnel compatible)
-For convenience there is also the posibility to use expressions. 
+For convenience there is also the posibility to use expressions. This is not supported bij Opentunnel so do not use it in your tunnel runtimevariables.
 The expressions are based on a java like syntax.
  
 ```ftl
@@ -185,7 +198,7 @@ expr=expression://hello.length + 10
 epr = 14
 
  
-## vars.txt properties file
+## vars.properties file
 
 The file contains a set of key/value pairs that normaly are configured in the opentunnel as tunnelvars. Or that are parsed to the template in the runtime.
  
@@ -288,7 +301,7 @@ data:        ${allAttachments[key].data}
 ```groovy
 class Greeter {
     String sayHello(name) {
-        def greet = "Hello, Transforminator " + name
+        def greet = "Hello, Freemarkergen " + name
         greet
     }
 }
@@ -300,9 +313,9 @@ gr.sayHello(args[1])
 
 ### Example tasks for visual studio code
 
-To use the Transforminator tool from vscode and test your templates you need to add a folder named .vscode
+To use the freemarkergen tool from vscode and test your templates you need to add a folder named .vscode
 In the .vscode folder create a file named tasks.json and add the following content.
-Now when you have all files in place press ctrl-shift-B and Transforminator will run with the options supplied in the tasks.json
+Now when you have all files in place press ctrl-shift-B and freemarkergen will run with the options supplied in the tasks.json
 ```json
 {
   "version": "2.0.0",
@@ -310,10 +323,10 @@ Now when you have all files in place press ctrl-shift-B and Transforminator will
     {
       "label": "current file",
       "type": "shell",
-      "command": "java -jar ~/tools/Transforminator.jar -t ${fileBasename} -x verstrekVordering_voorbeeld.xml -a vars.properties -o ${fileBasenameNoExtension}.xml",
+      "command": "java -jar ~/tools/Freemarkergen.jar -t ${fileBasename} -x verstrekVordering_voorbeeld.xml -a vars.properties -o ${fileBasenameNoExtension}.xml",
       "problemMatcher": [
         {
-          "owner": "Transforminator",
+          "owner": "freemarkergen",
           "fileLocation": [
             "relative",
             "${workspaceFolder}"
