@@ -1,10 +1,10 @@
-# FreemarkerGen tool
+# Transforminator tool
 
-This tool is to test Freemarker templates that can be used in message tranformations in the opentunnel.
+This tool is to test Freemarker and Xslt templates that can be used in message tranformations in the opentunnel environment. The tool is also suitable for other environments but has some specific functionalities to support the Opentunnel runtime variables.
 
-Minimal java version 1.8
+The tool requires a minimal java version 1.8.
 
-- [FreemarkerGen tool](#freemarkergen-tool)
+- [Transforminator tool](#transforminator-tool)
   - [Usage](#usage)
     - [Options](#options)
   - [Debugging](#debugging)
@@ -20,7 +20,7 @@ Minimal java version 1.8
     - [multipart formdata](#multipart-formdata)
     - [exitpoint](#exitpoint)
     - [expressions (Not OpenTunnel compatible)](#expressions-not-opentunnel-compatible)
-  - [vars.properties file](#varsproperties-file)
+  - [vars.tunnelvars file](#varstunnelvars-file)
     - [The Freemarker template.ftl](#the-freemarker-templateftl)
     - [Example Groovy script](#example-groovy-script)
     - [Example tasks for visual studio code](#example-tasks-for-visual-studio-code)
@@ -28,14 +28,14 @@ Minimal java version 1.8
 
 ## Usage
 
-` java -jar ~/tools/FreemarkerGen_jre18.jar -a vars.txt -t template.ftl -x input.xml -o output.xml -g groovy/lib/`
+` java -jar ~/tools/Transforminator.jar -a vars.txt -t template.ftl -x input.xml -o output.xml -g groovy/lib/`
 
 ### Options
 
 ```bash
 version 0.3
 
-usage: java -jar freemarker-gen.jar
+usage: java -jar Transforminator.jar
  -a,--vars <arg>             vars input file path
  -t,--template <arg>         freemarker template file
  -x,--xml-input <arg>        xml input filepath
@@ -49,8 +49,19 @@ usage: java -jar freemarker-gen.jar
  -v,--validate               validate resulting xml file
 ```
 
-You can use either the xml-input json-input or text-input, never together.
-The xml dom is made available through `payloadElement`  this is the objectrepresentation for the xml data structure.
+When a templatefile with the `.xsl` extension is supplied `-t` the xslt generator wil be invoked. When you use a template with `.ftl` extension the freemarker generator is used. Both generators can make use of the supplied tunnelvars.
+
+The tunnelvars are supplied using the `-a` option to the command. There is de posibitity to save the resolved tunnelvars to a separate file with the `-r` option. In the file all resolved variable values are stored so you can see what exact values were used when the template was evalueated. (works for freemarker and xslt templates)
+
+You can use either use the xml-input `-x`, json-input `-j` or text-input `-i`, never together.
+The xml dom is made available through `payloadElement`  this is the objectrepresentation for the xml data structure. When you supply a json file the ``xpath://`` tunnelvariables will work just like with an xml input file.
+
+The output file `-o` can be of any type for freemarker, for xslt it will be mostly `.xml`
+
+When generating xml output you can validate the generated xml using a specified schema with the `-s` option combined with the `-v ` option. You may also use the `-v` option with no schema, the xml is just validated to be valid xml (no schema is used then).
+
+There are some special options to the Transforminator tool. You may define a directory where you keep your groovy functions `-f`. In this way you do not have to copy them from project to project.
+From your groovy functions there is the possibility to use additional `.jar` libraries. You may supply this library-path with the `-g` option. When Opentunnel or some other environment uses some specific api's from the freemarker templates, you can use them from the `.jar` library.
 
 ## Debugging
 When an error occurs in the template all known variables are dumped in the output file.
@@ -85,7 +96,7 @@ For simple variable structures the :l is more preferable.
 
 ## tunnelvariables or templatevariables
 
-You can add your tunnelvars to the `vars.properties` file
+You can add your tunnelvars to the `vars.tunnelvars` file
 You may also use concatenation of tunnelvars to create a new variable.
 
 ``name=const://testtunnelvar://extension`` is invalid
@@ -100,23 +111,23 @@ Use the content of a file as the value:
 
 ### tunnelfunctions
 
-You may use functions in your template by first adding the definition to the properties file.
+You may use functions in your template by first adding the definition to the tunnelvars file.
 The value is then the file path to the script.
 
 ``function://function_name=groovy://script.groovy``
 
 The groovy script has all the tunnelvars available as variables 
-and also accepts parameters from you freemarker template. 
+and also accepts parameters from your freemarker template. 
 These parameters can be just a string or another tunnelvar.
 
-so in your template use the tunnelfunction like this;
+So in your template use the tunnelfunction like this;
 
 ``${tunnelFunction("helloworld",myname)}``
 
-⚠️When the tunnelfunction is used from the freemarker template the groovy script is then executed. The groovy engine in FreemarkerGen has only access to any some specific OpenTunnel classes
-so in the case you do use specific OT classes most of them do not work here.
+⚠️When the tunnelfunction is used from the freemarker template the groovy script is then executed. The groovy engine in Transforminator has only access to some specific OpenTunnel classes
+So in the case you do use specific OT classes most of them may not work here.
 
-When you might need java jar libraries you may place them in a directory and use the -g option to define the path to that directory. The FreemarkerGen scans and load all jar files in that directory.
+When you might need java jar libraries you may place them in a directory and use the `-g` option to define the path to that directory. The Transforminator scans and loads all jar files in that directory.
 
 Look below for an example groovy script.
 
@@ -149,7 +160,7 @@ When using xpath from your template you need to add the xmlnamespace in the temp
 ### header
 
 Freemarker transformations used by Opentunnel often make use of the headers that came with
-the received message. in the properties file you can add these headers in the folowing way.
+the received message. in the tunnelvars file you can add these headers in the folowing way.
 
 ``header://soapaction=myAction``
 
@@ -174,7 +185,7 @@ return result
 
 ### attachments
 
-You may use attachments from the properties file. You can just add a specific value to them or use the content of a specific file.
+You may use attachments from the tunnelvars file. You can just add a specific value to them or use the content of a specific file.
 
 ``attachment://name=file://filepath``
 
@@ -220,7 +231,7 @@ expr=expression://hello.length + 10
 epr = 14
 
  
-## vars.properties file
+## vars.tunnelvars file
 
 The file contains a set of key/value pairs that normaly are configured in the opentunnel as tunnelvars. Or that are parsed to the template in the runtime.
  
@@ -323,7 +334,7 @@ data:        ${allAttachments[key].data}
 ```groovy
 class Greeter {
     String sayHello(name) {
-        def greet = "Hello, Freemarkergen " + name
+        def greet = "Hello, Transforminator " + name
         greet
     }
 }
@@ -335,9 +346,9 @@ gr.sayHello(args[1])
 
 ### Example tasks for visual studio code
 
-To use the freemarkergen tool from vscode and test your templates you need to add a folder named .vscode
+To use the Transforminator tool from vscode and test your templates you need to add a folder named .vscode
 In the .vscode folder create a file named tasks.json and add the following content.
-Now when you have all files in place press ctrl-shift-B and freemarkergen will run with the options supplied in the tasks.json
+Now when you have all files in place press ctrl-shift-B and Transforminator will run with the options supplied in the tasks.json
 ```json
 {
   "version": "2.0.0",
@@ -345,10 +356,10 @@ Now when you have all files in place press ctrl-shift-B and freemarkergen will r
     {
       "label": "current file",
       "type": "shell",
-      "command": "java -jar ~/tools/Freemarkergen.jar -t ${fileBasename} -x verstrekVordering_voorbeeld.xml -a vars.properties -o ${fileBasenameNoExtension}.xml",
+      "command": "java -jar ~/tools/Transforminator.jar -t ${fileBasename} -x verstrekVordering_voorbeeld.xml -a vars.tunnelvars -o ${fileBasenameNoExtension}.xml",
       "problemMatcher": [
         {
-          "owner": "freemarkergen",
+          "owner": "Transforminator",
           "fileLocation": [
             "relative",
             "${workspaceFolder}"
