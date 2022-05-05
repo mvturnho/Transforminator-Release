@@ -7,6 +7,7 @@ The tool requires a minimal java version 1.8.
 - [Transforminator tool](#transforminator-tool)
   - [Usage](#usage)
     - [Options](#options)
+    - [Visual studio code](#visual-studio-code)
   - [Debugging](#debugging)
   - [tunnelvariables or templatevariables](#tunnelvariables-or-templatevariables)
     - [constant variables](#constant-variables)
@@ -20,15 +21,15 @@ The tool requires a minimal java version 1.8.
     - [multipart formdata](#multipart-formdata)
     - [exitpoint](#exitpoint)
     - [expressions (Not OpenTunnel compatible)](#expressions-not-opentunnel-compatible)
-  - [vars.tunnelvars file](#varstunnelvars-file)
+  - [Example setup](#example-setup)
+    - [vars.tunnelvars file](#varstunnelvars-file)
     - [The Freemarker template.ftl](#the-freemarker-templateftl)
     - [Example Groovy script](#example-groovy-script)
-    - [Example tasks for visual studio code](#example-tasks-for-visual-studio-code)
-
+    - [Input xml](#input-xml)
 
 ## Usage
 
-` java -jar ~/tools/Transforminator.jar -a vars.txt -t template.ftl -x input.xml -o output.xml -g groovy/lib/`
+` java -jar ~/tools/Transforminator.jar -a vars.tunnelvars -t template.ftl -x input.xml -o output.xml`
 
 ### Options
 
@@ -62,6 +63,10 @@ When generating xml output you can validate the generated xml using a specified 
 
 There are some special options to the Transforminator tool. You may define a directory where you keep your groovy functions `-f`. In this way you do not have to copy them from project to project.
 From your groovy functions there is the possibility to use additional `.jar` libraries. You may supply this library-path with the `-g` option. When Opentunnel or some other environment uses some specific api's from the freemarker templates, you can use them from the `.jar` library.
+
+### Visual studio code
+
+This tool is best used in combination with [Visual Studio Code](https://code.visualstudio.com/download). Install the [extension Transforminator](https://marketplace.visualstudio.com/items?itemName=Qris.transforminator) to add additional editor features.
 
 ## Debugging
 When an error occurs in the template all known variables are dumped in the output file.
@@ -230,158 +235,74 @@ expr=expression://hello.length + 10
 
 epr = 14
 
- 
-## vars.tunnelvars file
+## Example setup
+
+Here are some examples for use with freemarker.
+
+`java -jar ~/tools/Transforminator.jar -a vars.tunnelvars -t template.ftl -x input.xml -o output.txt`
+
+### vars.tunnelvars file
 
 The file contains a set of key/value pairs that normaly are configured in the opentunnel as tunnelvars. Or that are parsed to the template in the runtime.
  
 
 ```properties
-#namespaces
-xmlns://test=http://www.omgevingswet.nl/koppelvlak/stam-v2/IMAM
+#use ${DEBUG()} in your freemarker template to dump vars in your output
+#xpath always prefix with xpath:// never only //
 
-exitPoint=loopback.generic
+#definitions like xmlns:// and header://
+xmlns://person=http://test.org/persons/
+header://action=soapaction
+function://uuid=groovy://UUID.groovy
+exitpoint://CODE=GET:text/xml:http://localhost:8441/mock/service
+attachment://testinput=file://test.json
 
-businessTimestamp=20200908123049714
-messageId=zWbs5X7ITY68gYPYH4iMmg@172.20.0.3
-partyId=00000001805329535000
-processId=8QHheAWCTBKxKGGYcZnCpA
-service=NVT
+#Tunnelvars
+uuid=function://uuid
+business=transport://soapaction
+name=xpath:////person:name
+street=xpath:////person:street
 
-timestamp=20200908123049714
-timestampDay=8
-timestampDay2=08
-timestampHour=12
-timestampMinute=30
-timestampMonth=9
-timestampMonth2=09
-timestampSecond=49
-timestampYear=2020
-
-jsonfile=file://test.json
-
-myname=Michiel
-tunnelfunction://helloworld=groovy://test.groovy
-
-tunnelfunction://boring=boring things happening
-tunnelfunction://jsoninput=file://test.json
-
-attachment://hello_json={"dom":"doen"}
-attachment://hello_xml=<hello>xml</hello>
-url_newfile=file://input.xml
-
-xptest=xpath:////vx:type
-
+business=tunnelvar://nameconst:// - tunnelvar://street
 ```
 
 ### The Freemarker template.ftl
 
 ```freemarker
-${tunnelFunction("helloworld",myname)}
-${tunnelFunction("boring")}
-${tunnelFunction("jsoninput")}
-------------------------------------------------------------
-get ALL available keys in the datamodel
+<#ftl encoding='UTF-8' ns_prefixes={"p":"http://test.org/persons/"}>
 
-<#assign formAttachments = {}>
-<#assign multipart = {}>
-<#list .data_model?keys as key>
-  ${key}
-  <#if key?matches("form.attachment.\\d+")>
-    <#assign formAttachments += {key:.data_model[key]} >
-  </#if>
-  <#if key?starts_with("url_")>
-  	<#assign multipart += {key:.data_model[key]}>
-  </#if>
-</#list>
-------------------------------------------------------------
-get ALL multipart data
+<#assign zipcode=payloadElement["//p:zipcode"]/>
+<#assign next_uuid=tunnelFunction("uuid") />
 
-<#list multipart?keys as key>
-	${key}
-	${multipart[key]}
-=====
-</#list>
-------------------------------------------------------------
-get ALL attachements by its names
+FULL DEBUG OUTPUT
+${DEBUG()}
 
-<#list formAttachments?keys as key>
-    <#assign att = attachments(messageheader,formAttachments[key])>
-    <#list att?keys as ha>
-=====
-        <#list att[ha]?keys as hak>
-            <#if att[ha][hak]?is_string || att[ha][hak]?is_boolean || att[ha][hak]?is_number || att[ha][hak]?is_date>
-${hak} : ${att[ha][hak]}
-            </#if>
-        </#list>
-=====        
-    </#list>
-</#list>
-------------------------------------------------------------
-get ALL attachments by their keys in attachments
+SINGLE LINE DEBUG OUTPUT
+${DEBUG(":l","zipcode","name")}
 
-<#assign allAttachments = attachments(messageheader)>
-<#list allAttachments?keys as key>
-keyname:     ${key}
-partname:    ${allAttachments[key].partName}
-contentType: ${allAttachments[key].contentType}
-data:        ${allAttachments[key].data}
-</#list>
+{
+    "user" : {
+        "name": "${name}",
+        "adress": "${street}",
+        "zipcode": ${zipcode}
+    }
+}
 ```
 
 ### Example Groovy script
 
 ```groovy
-class Greeter {
-    String sayHello(name) {
-        def greet = "Hello, Transforminator " + name
-        greet
-    }
-}
-
-def gr = new Greeter()
-
-gr.sayHello(args[1])
+java.util.UUID.randomUUID().toString()
 ```
 
-### Example tasks for visual studio code
+### Input xml
 
-To use the Transforminator tool from vscode and test your templates you need to add a folder named .vscode
-In the .vscode folder create a file named tasks.json and add the following content.
-Now when you have all files in place press ctrl-shift-B and Transforminator will run with the options supplied in the tasks.json
-```json
-{
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "current file",
-      "type": "shell",
-      "command": "java -jar ~/tools/Transforminator.jar -t ${fileBasename} -x verstrekVordering_voorbeeld.xml -a vars.tunnelvars -o ${fileBasenameNoExtension}.xml",
-      "problemMatcher": [
-        {
-          "owner": "Transforminator",
-          "fileLocation": [
-            "relative",
-            "${workspaceFolder}"
-          ],
-          "pattern": {
-            "regexp": ".*?template\\s\"(.*)\".*line\\s(\\d+).*column\\s(\\d+).*$",
-            "file": 1,
-            "line": 2,
-            "column": 3
-          },
-          "severity": "error"
-        }
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "presentation": {
-        "clear": true
-      }
-    }
-  ]
-}
-
+```xml
+<person xmlns:p="http://test.org/persons/">
+    <p:name>Tibbe</p:name>
+    <p:address>
+        <p:street>Tibbe-street</p:street>
+        <p:zipcode>1825SE</p:zipcode>
+    </p:address>
+</person>
 ```
