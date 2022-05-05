@@ -4,6 +4,28 @@ This tool is to test Freemarker templates that can be used in message tranformat
 
 Minimal java version 1.8
 
+- [FreemarkerGen tool](#freemarkergen-tool)
+  - [Usage](#usage)
+    - [Options](#options)
+  - [Debugging](#debugging)
+  - [tunnelvariables or templatevariables](#tunnelvariables-or-templatevariables)
+    - [constant variables](#constant-variables)
+    - [file content](#file-content)
+    - [tunnelfunctions](#tunnelfunctions)
+    - [function](#function)
+    - [XPath and jsonpath](#xpath-and-jsonpath)
+    - [xmlns  xml namespace](#xmlns--xml-namespace)
+    - [header](#header)
+    - [attachments](#attachments)
+    - [multipart formdata](#multipart-formdata)
+    - [exitpoint](#exitpoint)
+    - [expressions (Not OpenTunnel compatible)](#expressions-not-opentunnel-compatible)
+  - [vars.properties file](#varsproperties-file)
+    - [The Freemarker template.ftl](#the-freemarker-templateftl)
+    - [Example Groovy script](#example-groovy-script)
+    - [Example tasks for visual studio code](#example-tasks-for-visual-studio-code)
+
+
 ## Usage
 
 ` java -jar ~/tools/FreemarkerGen_jre18.jar -a vars.txt -t template.ftl -x input.xml -o output.xml -g groovy/lib/`
