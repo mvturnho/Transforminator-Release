@@ -14,6 +14,7 @@ The tool requires a minimal java version 1.8.
     - [file content](#file-content)
     - [tunnelfunctions](#tunnelfunctions)
     - [function](#function)
+    - [mappings](#mappings)
     - [XPath and jsonpath](#xpath-and-jsonpath)
     - [xmlns  xml namespace](#xmlns--xml-namespace)
     - [header](#header)
@@ -144,6 +145,23 @@ from the next tunnelvar;
 ``varname=function://`function_name/varx``
 
 The varname is then initialized with the return value of your groovy script.
+
+### mappings
+
+To make use of the opentunnel mapping functionality you may add your mapping tables by using the `mapping://` definition.
+The most convenient way is to use a csv file for input to your mapping.
+
+``mapping://maptable=file://mappinginput.csv``
+
+After this the mappingtable with name `maptable` is available to create your tunnelvars;
+
+```
+mapping://maptable=file://mapping_input_file.csv
+someCode=const://code
+varname=function://mapping/maptable/someCode
+```
+The variable `varName` now contains the value that was in the csv file for key code
+
 
 ### XPath and jsonpath
 
