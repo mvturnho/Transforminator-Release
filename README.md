@@ -1,6 +1,9 @@
 # Transforminator tool
 
 This tool is to test Freemarker and Xslt templates that can be used in message tranformations in the opentunnel environment. The tool is also suitable for other environments but has some specific functionalities to support the Opentunnel runtime variables.
+For convenience you best use this tool with the [Transforminator Visualstudio code extension](https://marketplace.visualstudio.com/items?itemName=Qris.transforminator). 
+
+![Settings](images/transforminator-vscode-extension.png)
 
 The tool requires a minimal java version 1.8.
 
@@ -18,6 +21,7 @@ The tool requires a minimal java version 1.8.
     - [XPath and jsonpath](#xpath-and-jsonpath)
     - [xmlns  xml namespace](#xmlns--xml-namespace)
     - [header](#header)
+    - [xslt factoryname](#xslt factoryname)
     - [attachments](#attachments)
     - [multipart formdata](#multipart-formdata)
     - [exitpoint](#exitpoint)
@@ -162,6 +166,10 @@ varname=function://mapping/maptable/someCode
 ```
 The variable `varName` now contains the value that was in the csv file for key code
 
+In your Freemarker template you can also access the mappings in the following way.
+
+``mappingName.map["keyname"]``
+
 
 ### XPath and jsonpath
 
@@ -205,6 +213,16 @@ mh.transportParametersMap.each { key, val ->
 
 return result
 ```
+
+### xslt factoryname
+
+For the xslt processor you can define what factoryname should be used. You can do this by defining the processor in your tunnelvars file.
+
+- jdk
+- xalan
+- saxon
+
+``processor=xalan``
 
 ### attachments
 
