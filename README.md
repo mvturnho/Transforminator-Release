@@ -21,7 +21,8 @@ The tool requires a minimal java version 1.8.
     - [XPath and jsonpath](#xpath-and-jsonpath)
     - [xmlns  xml namespace](#xmlns--xml-namespace)
     - [header](#header)
-    - [xslt factoryname](#xslt factoryname)
+    - [Freemarkerversion](#freemarkerversion)
+    - [xslt factoryname](#xslt-factoryname)
     - [attachments](#attachments)
     - [multipart formdata](#multipart-formdata)
     - [exitpoint](#exitpoint)
@@ -214,6 +215,31 @@ mh.transportParametersMap.each { key, val ->
 return result
 ```
 
+### Freemarkerversion
+
+The freemarker engine supports several versions. The freemarkerversion can be definded by the OpenTunnel version
+
+`opentunnelVersion=3.0` Gives freemarkerversion 2.3.30 All other OT versions lead to freemarkerversion 2.3.28
+
+supported OT versions are:
+- ``3.0`` uses Freemarker version 2.3.30
+- ``2.4`` uses Freemarker version 2.3.28
+- ``2.2`` uses Freemarker version 2.3.28
+
+You may also define the freemarkerversion to be used explicitly.
+
+`freemarkerVersion=2.3.28`
+
+supported freemarker versions are:
+- ``2.3.30``
+- ``2.3.28``
+- ``2.3.27``
+- ``2.3.26``
+- ``2.3.25``
+- ``2.3.24``
+- ``2.3.23``
+- ``2.3.22``
+
 ### xslt factoryname
 
 For the xslt processor you can define what factoryname should be used. You can do this by defining the processor in your tunnelvars file.
@@ -222,7 +248,15 @@ For the xslt processor you can define what factoryname should be used. You can d
 - xalan
 - saxon
 
-``processor=xalan``
+``processor=xalan`` or use:
+
+``xslt.transformer.factory=saxon`` the prefered OT way for xslt templates.
+
+Why use saxon?
+
+Saxon an XSLT 2.0 and XSLT 3.0 processor, it is very actively developed and maintained.
+Its developer, Dr. Michael Kay is the Editor of the W3C XSLT WG (Working Group) and thus he is probable the one that best understands the XSLT Specification and this shows in Saxon. Any language feature is strictly and precisely implemented -- usually well ahead of other vendors.
+
 
 ### attachments
 
