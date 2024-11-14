@@ -21,7 +21,7 @@ The tool requires a minimal java version 1.8.
     - [XPath and jsonpath](#xpath-and-jsonpath)
     - [xmlns  xml namespace](#xmlns--xml-namespace)
     - [header](#header)
-    - [xslt factoryname](#xslt factoryname)
+    - [xslt factoryname](#xslt-factoryname)
     - [attachments](#attachments)
     - [multipart formdata](#multipart-formdata)
     - [exitpoint](#exitpoint)
@@ -32,6 +32,15 @@ The tool requires a minimal java version 1.8.
     - [Example Groovy script](#example-groovy-script)
     - [Input xml](#input-xml)
 
+## What is new
+
+- Stability is improved
+- mappings functionality
+- query functionality on csv files
+- groovy transformer support (no opentunnel specific functions yet)
+
+PLEASE UPDATE YOUR Transforminator VisualStudioCode plugin as well.
+
 ## Usage
 
 ` java -jar ~/tools/Transforminator.jar -a vars.tunnelvars -t template.ftl -x input.xml -o output.xml`
@@ -39,11 +48,11 @@ The tool requires a minimal java version 1.8.
 ### Options
 
 ```bash
-version 0.3
+version 2.10
 
 usage: java -jar Transforminator.jar
  -a,--vars <arg>             vars input file path
- -t,--template <arg>         freemarker template file
+ -t,--template <arg>         freemarker,xslt or groovy template file
  -x,--xml-input <arg>        xml input filepath
  -j,--json-input <arg>       json input filepath
  -i,--text-input <arg>       text input filepath
@@ -55,11 +64,84 @@ usage: java -jar Transforminator.jar
  -v,--validate               validate resulting xml file
 ```
 
-When a templatefile with the `.xsl` extension is supplied `-t` the xslt generator wil be invoked. When you use a template with `.ftl` extension the freemarker generator is used. Both generators can make use of the supplied tunnelvars.
+When a templatefile with the `.xsl` extension is supplied to the template option `-t` the xslt generator wil be invoked. When you use a template with `.ftl` extension the freemarker generator is used. You may also supply a groovy script as a template with the `.groovy` extension then the groovy generator wil be invoked. All generators can make use of the supplied tunnelvars.
 
 The tunnelvars are supplied using the `-a` option to the command. There is de posibitity to save the resolved tunnelvars to a separate file with the `-r` option. In the file all resolved variable values are stored so you can see what exact values were used when the template was evalueated. (works for freemarker and xslt templates)
 
+The groovy template script can use the `println("...")` to produce output and/or `return` a string to be used as a script result. When the script returns no value with the `return`statement all `println` output will be placed in the outputfile indicated by the `-o`commandline option.
+
+### inputfiles
+
 You can use either use the xml-input `-x`, json-input `-j` or text-input `-i`, never together.
+When using the `-i` option the file is being parsed based on the extension.
+- .xml  - xml gets parsed and the dom model is available in freemarker `payloadElement` variable
+- .json 
+- .csv  - csv is parsed and available through the `payloadHelper` freemarker variable (not in Opentunnel)
+- .yaml - yaml is parsed and available through the `payloadHelper` freemarker variable (not in Opentunnel)
+
+#### payloadMessage
+
+The payloadMessage has some generic functions:
+- getPayload()       - return the initial payload as a string
+- getPayloadElement()- returns the Object representation of the inputfile.
+  - for json and yaml the returned object wil be a JsonNode object
+  - for xml we return a NodeModel
+  - for csv the returned object will be a Map object
+- getPayloadString() - returns the string as it was read from the inputfile.
+- getJsonPayload()   - returns the JSon representation of the inputfile
+- getJsonPayloadElement() - The json representation for the message data
+- getXmlPayload()    - returns the Xml payload
+- getXmlPayloadElement() - The xml representation for the message data
+- getDataObject()    - the internal data object for the message
+  - for Json and Yaml this is a Map
+  - for xml this is a NodeModel
+  - for csv this is a list of lists
+- getContentType()   - returns the contenttype for the message in string format.
+
+Xslt has no support for this functionality.
+In Freemarker you may use the short version of the methods like this:
+```
+${payloadMessage.payload}
+${payloadMessage.jsonPayload}
+<#assign obj = payloadMessage.dataObject>
+
+${payloadMessage.payloadElement[0].KEY}
+```
+for yaml you should iterate a map:
+```
+<#list obj?keys as k>
+  ${k}
+</#list>
+```
+for csv you iterate a List (example to xml)
+```freemarker
+<rows>
+<#list rows as row>
+    <row>
+    <#list payloadMessage.headers as header>
+        <${header}>${payloadMessage.value(header?counter,header)}<${header}>
+    </#list>
+    </row>
+</#list>
+</rows>
+```
+
+The payloadMessage for csv inputfiles has some more specific csv methods.
+- `getSize()` - the number of rows in the csv (without the header)
+- `getHeaders()` - the List with all header names
+- `getStringHeaders(separator)` - String representation of the headers, you must supply the separator string
+- `getRow(rownum)` - Get the row by its row number as a List object
+- `getJsonRow(rownum)` - get the Json string representation of the requested row
+- `getStringRow(rownum, separator)` - get the String representation of the row by its number, you also supply the separator string.
+- `getValue(rownum,colnum)` - get a value by its row and column number
+- `getValue(rownum,headername)` - get a value by its row number and column name
+- `getColIndex(headername)` - get the column number by its name
+- `getLastRow` - get the lastrow as a list
+
+```freemarker
+${payloadMessage.getStringHeaders("|")}
+```
+
 The xml dom is made available through `payloadElement`  this is the objectrepresentation for the xml data structure. When you supply a json file the ``xpath://`` tunnelvariables will work just like with an xml input file.
 
 The output file `-o` can be of any type for freemarker, for xslt it will be mostly `.xml`
@@ -157,7 +239,7 @@ The most convenient way is to use a csv file for input to your mapping.
 
 ``mapping://maptable=file://mappinginput.csv``
 
-After this the mappingtable with name `maptable` is available to create your tunnelvars;
+After this the mappingtable with name `maptable` is available to create your tunnelvars like it is supported in opentunnel;
 
 ```
 mapping://maptable=file://mapping_input_file.csv
@@ -166,14 +248,108 @@ varname=function://mapping/maptable/someCode
 ```
 The variable `varName` now contains the value that was in the csv file for key code
 
+Or you may query the mapping using SQL language, this functionality is not supported in opentunnel but may be used when using Transforminator for generic purposes.
+
+```
+mapping://mydb=file://mapping_input_file.csv
+resultlist=query://SELECT * from mydb WHERE name='Harry Potter'
+```
+
+resultlist now contains a list of rows that match the selection you may use the tunnelvar resultlist in freemarker like anyother List.
+
+#### Freemarker
 In your Freemarker template you can also access the mappings in the following way.
 
-``mappingName.map["keyname"]``
+```freemarker
+mappingName.map["keyname"]
+```
 
+The mappingsResolver is also available in your freemarker template (not supported by opentunnel). 
+From the template you can query the mapping like it is a Database table.
+
+```freemarker
+${mappings.query("select * from mydb where name=\'Harry Potter\'")[0].Year}
+```
+
+#### For Saxon
+
+From Opentunnel version 3.1 you may use the mappings in the Xslt transformations: This can be tested with the Transforminator tool as well;
+
+first define the mapping in your tunnelvars file;
+
+``mapping://otmap=file://mappings.csv``
+
+For Saxon the template may look like this:
+```xml
+<xsl:stylesheet version="3.0"
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:javamap="http://www.w3.org/2005/xpath-functions/map"
+                exclude-result-prefixes="javamap xsl">
+    <xsl:param name="otmap"/>
+    <xsl:param name="DEBUG"/>
+
+    <xsl:output omit-xml-declaration="yes" indent="yes" encoding="utf-8" method="xml"/>
+    <xsl:strip-space elements="*"/>
+
+    <xsl:template match="/">
+        <start><xsl:value-of select="javamap:get($otmap, 'code')"/></start>
+    </xsl:template>
+</xsl:stylesheet>
+```
+
+#### For Xalan and JDK
+
+Define the mapping as shown above, and your template may look like this;
+
+```xml
+<xsl:stylesheet version="3.0"
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:attrmap="xalan://nl.jnc.gateway.configuration.dto.AttributeValueMapping"
+                xmlns:javamap="xalan://java.util.Map"
+                exclude-result-prefixes="attrmap javamap xsl ">
+    <xsl:param name="otmap"/>
+    <xsl:param name="DEBUG"/>
+
+    <xsl:output omit-xml-declaration="yes" indent="yes" encoding="utf-8" method="xml"/>
+    <xsl:strip-space elements="*"/>
+
+    <xsl:template match="/">
+        <start>
+            <xsl:value-of select="javamap:get(attrmap:getMap($otmap), 'code')"/>
+        </start>
+    </xsl:template>
+</xsl:stylesheet>
+```
+
+### CSV Query's
+
+This functionality is not supported in Opentunnel and only SELECT query's are supported.
+
+You may query a csv file using an SQL query. The CSV file should contain column data with header-names.
+
+```
+mapping://mydb=file://dbfile.csv
+varname=query://SELECT * from mydb
+```
+
+SQL SELECT queries must be of the following format.
+
+```sql
+SELECT [DISTINCT] [table-alias.]column [[AS] alias], ...
+FROM table [[AS] table-alias]
+WHERE [NOT] condition [AND | OR condition] ...
+GROUP BY column ... [HAVING condition ...]
+ORDER BY column [ASC | DESC] ...
+LIMIT n [OFFSET n]
+```
 
 ### XPath and jsonpath
 
-When working with xml or json input files you may also use the xpath:// or jsonpath:// directive. ``varname=xpath://ns:element`` It should work just like in opentunnel.
+When working with xml or json input files you may also use the `xpath://` or `jsonpath://` directive. 
+
+``varname=xpath://ns:element`` 
+
+It should work just like in opentunnel.
 The jsonpath works just like the xpath, the json payload is first transformed to a xml-object model and then the jsonpath (xpath) is resolved.
 
 ### xmlns  xml namespace
@@ -214,6 +390,31 @@ mh.transportParametersMap.each { key, val ->
 return result
 ```
 
+### Freemarkerversion
+
+The freemarker engine supports several versions. The freemarkerversion can be definded by the OpenTunnel version
+
+`opentunnelVersion=3.0` Gives freemarkerversion 2.3.30 All other OT versions lead to freemarkerversion 2.3.28
+
+supported OT versions are:
+- ``3.0`` uses Freemarker version 2.3.30
+- ``2.4`` uses Freemarker version 2.3.28
+- ``2.2`` uses Freemarker version 2.3.28
+
+You may also define the freemarkerversion to be used explicitly.
+
+`freemarkerVersion=2.3.28`
+
+supported freemarker versions are:
+- ``2.3.30``
+- ``2.3.28``
+- ``2.3.27``
+- ``2.3.26``
+- ``2.3.25``
+- ``2.3.24``
+- ``2.3.23``
+- ``2.3.22``
+
 ### xslt factoryname
 
 For the xslt processor you can define what factoryname should be used. You can do this by defining the processor in your tunnelvars file.
@@ -222,7 +423,15 @@ For the xslt processor you can define what factoryname should be used. You can d
 - xalan
 - saxon
 
-``processor=xalan``
+``processor=xalan`` or use:
+
+``xslt.transformer.factory=saxon`` the prefered OT way for xslt templates.
+
+Why use saxon?
+
+Saxon an XSLT 2.0 and XSLT 3.0 processor, it is very actively developed and maintained.
+Its developer, Dr. Michael Kay is the Editor of the W3C XSLT WG (Working Group) and thus he is probable the one that best understands the XSLT Specification and this shows in Saxon. Any language feature is strictly and precisely implemented -- usually well ahead of other vendors.
+
 
 ### attachments
 
