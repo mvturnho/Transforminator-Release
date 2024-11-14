@@ -1,3 +1,41 @@
+# V1.7
+
+## several bugfixes
+
+- mappings and freemarker transformations
+- xslt factory selection
+
+## OT like xslt transformer factory
+
+In your ``variables.tunnelvars`` you may now use the OT ``xslt.transformer.factory`` to define the xslt factory to be used in the transformation.
+
+Possible values are:
+- ``jdk``
+- ``saxon``
+- ``xalan``
+
+## define the OT version to select the correct freemarker version for that OT version
+
+``opentunnelVersion=3.0``
+
+- ``3.0`` uses Freemarker version 2.3.30
+- ``2.4`` uses Freemarker version 2.3.28
+- ``2.2`` uses Freemarker version 2.3.28
+
+## define the freemarker version to be used.
+
+``freemarkerVersion=2.3.28``
+
+- ``2.3.30``
+- ``2.3.28``
+- ``2.3.27``
+- ``2.3.26``
+- ``2.3.25``
+- ``2.3.24``
+- ``2.3.23``
+- ``2.3.22``
+
+
 # V1.5
 
 ## mappings from freemarker template

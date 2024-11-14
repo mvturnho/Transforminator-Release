@@ -21,6 +21,7 @@ The tool requires a minimal java version 1.8.
     - [XPath and jsonpath](#xpath-and-jsonpath)
     - [xmlns  xml namespace](#xmlns--xml-namespace)
     - [header](#header)
+    - [Freemarkerversion](#freemarkerversion)
     - [xslt factoryname](#xslt-factoryname)
     - [attachments](#attachments)
     - [multipart formdata](#multipart-formdata)
