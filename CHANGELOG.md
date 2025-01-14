@@ -1,3 +1,12 @@
+# V2.2.0
+## groovy support for OT functionality
+- exitpoints
+- mappings
+- dependencies
+
+## Debug optimisations for freemarker
+
+
 # V1.7
 
 ## several bugfixes

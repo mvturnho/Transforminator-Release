@@ -21,7 +21,6 @@ The tool requires a minimal java version 1.8.
     - [XPath and jsonpath](#xpath-and-jsonpath)
     - [xmlns  xml namespace](#xmlns--xml-namespace)
     - [header](#header)
-    - [Freemarkerversion](#freemarkerversion)
     - [xslt factoryname](#xslt-factoryname)
     - [attachments](#attachments)
     - [multipart formdata](#multipart-formdata)
@@ -33,15 +32,6 @@ The tool requires a minimal java version 1.8.
     - [Example Groovy script](#example-groovy-script)
     - [Input xml](#input-xml)
 
-## What is new
-
-- Stability is improved
-- mappings functionality
-- query functionality on csv files
-- groovy transformer support (no opentunnel specific functions yet)
-
-PLEASE UPDATE YOUR Transforminator VisualStudioCode plugin as well.
-
 ## Usage
 
 ` java -jar ~/tools/Transforminator.jar -a vars.tunnelvars -t template.ftl -x input.xml -o output.xml`
@@ -49,7 +39,7 @@ PLEASE UPDATE YOUR Transforminator VisualStudioCode plugin as well.
 ### Options
 
 ```bash
-version 2.10
+version 2.1.0
 
 usage: java -jar Transforminator.jar
  -a,--vars <arg>             vars input file path
@@ -101,7 +91,7 @@ The payloadMessage has some generic functions:
 
 Xslt has no support for this functionality.
 In Freemarker you may use the short version of the methods like this:
-```
+```freemarker
 ${payloadMessage.payload}
 ${payloadMessage.jsonPayload}
 <#assign obj = payloadMessage.dataObject>
@@ -109,7 +99,7 @@ ${payloadMessage.jsonPayload}
 ${payloadMessage.payloadElement[0].KEY}
 ```
 for yaml you should iterate a map:
-```
+```freemarker
 <#list obj?keys as k>
   ${k}
 </#list>
@@ -171,7 +161,7 @@ when the first argument starts with a : the folowing character is used to format
 
 `${DEBUG("varname")}` prints like
 
-```
+```json
 _________________ DEBUG info __________________
 {
   "DebugVariables" : {
@@ -226,10 +216,14 @@ Look below for an example groovy script.
 
 ### function
 
-When you have defined your function with ``function://name=groovy://script.groovy`` You can call this function
+When you have defined your function with ``function://function_name=groovy://script.groovy`` You can call this function
 from the next tunnelvar;
 
 ``varname=function://`function_name/varx``
+
+or add the function as a dependency;
+
+``dependendcy://DEP_NAME=function://function_name``
 
 The varname is then initialized with the return value of your groovy script.
 
@@ -242,16 +236,17 @@ The most convenient way is to use a csv file for input to your mapping.
 
 After this the mappingtable with name `maptable` is available to create your tunnelvars like it is supported in opentunnel;
 
-```
+```properties
 mapping://maptable=file://mapping_input_file.csv
 someCode=const://code
 varname=function://mapping/maptable/someCode
+dependency://DEP_MAPPING=mapping://maptable
 ```
 The variable `varName` now contains the value that was in the csv file for key code
 
 Or you may query the mapping using SQL language, this functionality is not supported in opentunnel but may be used when using Transforminator for generic purposes.
 
-```
+```properties
 mapping://mydb=file://mapping_input_file.csv
 resultlist=query://SELECT * from mydb WHERE name='Harry Potter'
 ```
@@ -328,7 +323,7 @@ This functionality is not supported in Opentunnel and only SELECT query's are su
 
 You may query a csv file using an SQL query. The CSV file should contain column data with header-names.
 
-```
+```properties
 mapping://mydb=file://dbfile.csv
 varname=query://SELECT * from mydb
 ```
@@ -462,6 +457,27 @@ From your template you can use the Opentunnel `deliveryPointAttachment` function
 
 ```ftl
 <#assign val = deliveryPointAttachment(payload,"EXP_OUT")>
+```
+
+for groovy you can use the exitpoint by defgining a dependency;
+
+```properties
+# objects
+exitpoint://EXP_CODE=GET:application/json:http://localhost:8441/dso
+# dependencies
+dependency://EXP_HELPER_EXITPOINT=exitpoint://EXP_CODE
+```
+
+```groovy
+    def json = new JsonBuilder()
+    json    id:  someid
+            
+    caseMessageContent = new MessageContent()
+    caseMessageContent.setRawContent(json.toString().getBytes())
+    groovyMessageHeaders = getDefaultHeaders(caseMessageContent, 'getcase_by_id',samenwerkingId,'','','')
+    att = deliveryPointAttachment(groovyMessageHeaders, caseMessageContent, EXP_HELPER_EXITPOINT)
+
+    println(att.data)
 ```
 
 ### expressions (Not OpenTunnel compatible)
