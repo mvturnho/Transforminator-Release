@@ -1,4 +1,10 @@
 # V2.2.0
+## memory monitor
+- bugfixes
+- memory usage for transformers
+- error reporting for groovy
+
+# V2.2.0
 ## groovy support for OT functionality
 - exitpoints
 - mappings
