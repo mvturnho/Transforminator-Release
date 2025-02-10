@@ -1,4 +1,4 @@
-# V2.2.0
+# V2.2.1
 ## memory monitor
 - bugfixes
 - memory usage for transformers
