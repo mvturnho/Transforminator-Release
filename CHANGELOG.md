@@ -1,3 +1,7 @@
+# V2.2.2
+## bugfix
+IO Error prevented syntax error on freemarker template
+
 # V2.2.1
 ## memory monitor
 - bugfixes
